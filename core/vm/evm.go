@@ -18,6 +18,7 @@ package vm
 
 import (
 	"errors"
+	"log"
 	"math/big"
 	"sync/atomic"
 	"time"
@@ -85,7 +86,12 @@ func run(evm *EVM, contract *Contract, input []byte, readOnly bool) ([]byte, err
 				}(evm.interpreter)
 				evm.interpreter = interpreter
 			}
-			return interpreter.Run(contract, input, readOnly)
+			ret, err := interpreter.Run(contract, input, readOnly)
+			// NOTE: This is a patch to capture vm errors. Please be careful not to merge it into a production.
+			if err != nil {
+				log.Printf("VMERROR: contract='%s' ret='%s(%v)' vmerr='%s'", contract.self.Address(), ret, ret, err.Error())
+			}
+			return ret, err
 		}
 	}
 	return nil, errors.New("no compatible interpreter")
